@@ -30,6 +30,10 @@ target_include_directories("glad" PRIVATE "${GLAD_DIR}/include")
 target_include_directories(${PROJECT_NAME} PRIVATE "${GLAD_DIR}/include")
 target_link_libraries(${PROJECT_NAME} "glad" "${CMAKE_DL_LIBS}")
 
+# glm 
+set(GLM_DIR "${LIB_DIR}/glm")
+target_include_directories(${PROJECT_NAME} PRIVATE "${GLM_DIR}")
+
 # MAC
 include(FindPkgConfig)
 if (NOT APPLE)
