@@ -1,6 +1,7 @@
 #include "main.h"
 #include "timer.h"
 #include "ball.h"
+#include "player.h"
 
 using namespace std;
 
@@ -12,12 +13,22 @@ GLFWwindow *window;
 * Customizable functions *
 **************************/
 
-Ball ball1;
+Player player;
+vector<pair<int, int>> walls;
 
-float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0;
+float screen_zoom = 0.4, screen_center_x = 0, screen_center_y = 0;
 float camera_rotation_angle = 0;
 
 Timer t60(1.0 / 60);
+
+bool has_wall(int x, int y){
+    for(int k=0;k<21;k++){ 
+        if(walls[k].first == x && walls[k].second == y){ 
+            return 1;
+        }
+    }
+    return 0;
+}
 
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
@@ -51,20 +62,49 @@ void draw() {
     glm::mat4 MVP;  // MVP = Projection * View * Model
 
     // Scene render
-    ball1.draw(VP);
+    player.draw(VP);
+    for(auto wall: walls){
+        if(wall.first!=player.position.x || wall.second != player.position.y)
+            Ball(wall.first, wall.second, COLOR_GREEN).draw(VP);
+    }
+
+    for(int i=0;i<6;i++){
+        for(int j=0;j<8;j++){
+            if(!has_wall(i, j))
+                Ball(i, j, COLOR_RED).draw(VP);
+        }
+    }
+    
 }
 
 void tick_input(GLFWwindow *window) {
-    int left  = glfwGetKey(window, GLFW_KEY_LEFT);
-    int right = glfwGetKey(window, GLFW_KEY_RIGHT);
-    if (left) {
-        // Do something
+    int w  = glfwGetKey(window, GLFW_KEY_W);
+    int s  = glfwGetKey(window, GLFW_KEY_S);
+    int a = glfwGetKey(window, GLFW_KEY_A);
+    int d = glfwGetKey(window, GLFW_KEY_D);
+    int new_x = player.position.x;
+    int new_y = player.position.y;
+    if (a) {
+        new_x += 1;
+    }
+    if (d) {
+        new_x -= 1;
+    }
+    if (w) {
+        new_y += 1;
+    }
+    if (s) {
+        new_y -= 1;
+    }
+    if (has_wall(new_x, new_y)){
+        
+            player.set_position(new_x, new_y);
+        
     }
 }
 
 void tick_elements() {
-    ball1.tick();
-    camera_rotation_angle += 1;
+    //camera_rotation_angle += 1;
 }
 
 /* Initialize the OpenGL rendering properties */
@@ -73,8 +113,7 @@ void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
 
-    ball1       = Ball(0, 0, COLOR_RED);
-
+    player       = Player(0, 0, COLOR_BLUE);
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("../source/shaders/shader.vert", "../source/shaders/shader.frag");
     // Get a handle for our "MVP" uniform
@@ -101,8 +140,30 @@ int main(int argc, char **argv) {
     srand(time(0));
     int width  = 600;
     int height = 600;
-
+    camera_rotation_angle -= 90;
     window = initGLFW(width, height);
+    
+    walls.push_back(make_pair(0, 0));
+    walls.push_back(make_pair(0, 1));
+    walls.push_back(make_pair(1, 1));
+    walls.push_back(make_pair(2, 1));
+    walls.push_back(make_pair(2, 0));
+    walls.push_back(make_pair(3, 0));
+    walls.push_back(make_pair(4, 0));
+    walls.push_back(make_pair(4, 1));
+    walls.push_back(make_pair(4, 2));
+    walls.push_back(make_pair(4, 3));
+    walls.push_back(make_pair(3, 3));
+    walls.push_back(make_pair(2, 3));
+    walls.push_back(make_pair(2, 4));
+    walls.push_back(make_pair(2, 5));
+    walls.push_back(make_pair(3, 5));
+    walls.push_back(make_pair(4, 5));
+    walls.push_back(make_pair(5, 5));
+    walls.push_back(make_pair(3, 6));
+    walls.push_back(make_pair(3, 7));
+    walls.push_back(make_pair(4, 7));
+    walls.push_back(make_pair(5, 7));
 
     initGL (window, width, height);
 
