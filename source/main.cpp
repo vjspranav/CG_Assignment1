@@ -18,6 +18,7 @@ vector<pair<int, int>> walls;
 
 float screen_zoom = 0.4, screen_center_x = 0, screen_center_y = 0;
 float camera_rotation_angle = 0;
+int dark=0;
 
 Timer t60(1.0 / 60);
 
@@ -30,6 +31,21 @@ bool has_wall(int x, int y){
     return 0;
 }
 
+bool checkULDR(Player player, int x, int y){
+    int x1 = player.position.x;
+    int y1 = player.position.y;
+    if(x1==x){
+        if(abs(y-y1)==1){
+            return 1;
+        }
+    }
+    if(y1==y){
+        if(abs(x-x1)==1){
+            return 1;
+        }
+    }
+    return 0;
+}
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 void draw() {
@@ -64,24 +80,38 @@ void draw() {
     // Scene render
     player.draw(VP);
     for(auto wall: walls){
-        if(wall.first!=player.position.x || wall.second != player.position.y)
-            Ball(wall.first, wall.second, COLOR_GREEN).draw(VP);
+        if(wall.first!=player.position.x || wall.second != player.position.y){
+            if(dark && !checkULDR(player, wall.first, wall.second)){
+                Ball(wall.first, wall.second, COLOR_BLACK).draw(VP);
+            }else{
+                Ball(wall.first, wall.second, COLOR_GREEN).draw(VP);
+            }
+        }
     }
 
     for(int i=0;i<6;i++){
         for(int j=0;j<8;j++){
             if(!has_wall(i, j))
-                Ball(i, j, COLOR_RED).draw(VP);
+                if (dark && !checkULDR(player, i, j)){
+                    Ball(i, j, COLOR_BLACK).draw(VP);
+                }else{
+                    Ball(i, j, COLOR_RED).draw(VP);
+                }
         }
     }
     
 }
 
 void tick_input(GLFWwindow *window) {
+    static double lastTime = glfwGetTime();
+    double currentTime = glfwGetTime();
+    float deltaTime = float(currentTime - lastTime);
+
     int w  = glfwGetKey(window, GLFW_KEY_W);
     int s  = glfwGetKey(window, GLFW_KEY_S);
     int a = glfwGetKey(window, GLFW_KEY_A);
     int d = glfwGetKey(window, GLFW_KEY_D);
+    int l = glfwGetKey(window, GLFW_KEY_L);
     int new_x = player.position.x;
     int new_y = player.position.y;
     if (a) {
@@ -96,11 +126,15 @@ void tick_input(GLFWwindow *window) {
     if (s) {
         new_y -= 1;
     }
+    if (l) {
+        dark = !dark;
+    }
     if (has_wall(new_x, new_y)){
         
             player.set_position(new_x, new_y);
         
     }
+    lastTime = currentTime;
 }
 
 void tick_elements() {
