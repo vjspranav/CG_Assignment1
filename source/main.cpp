@@ -2,6 +2,7 @@
 #include "timer.h"
 #include "ball.h"
 #include "player.h"
+#include "maze.h"
 
 using namespace std;
 
@@ -16,15 +17,17 @@ GLFWwindow *window;
 Player player;
 vector<pair<int, int>> walls;
 
-float screen_zoom = 0.4, screen_center_x = 0, screen_center_y = 0;
+float screen_zoom = 0.2, screen_center_x = 0, screen_center_y = 0;
 float camera_rotation_angle = 0;
 int dark=0;
-
+int x_grid=0, y_grid=0;
+int score=0;
+float health = 20;
 Timer t60(1.0 / 60);
 
 bool has_wall(int x, int y){
-    for(int k=0;k<21;k++){ 
-        if(walls[k].first == x && walls[k].second == y){ 
+    for(auto wall : walls){ 
+        if(wall.first == x && wall.second == y){ 
             return 1;
         }
     }
@@ -43,6 +46,9 @@ bool checkULDR(Player player, int x, int y){
         if(abs(x-x1)==1){
             return 1;
         }
+    }
+    if(abs(x-x1)==1 && abs(y-y1)==1){
+            return 1;
     }
     return 0;
 }
@@ -89,8 +95,8 @@ void draw() {
         }
     }
 
-    for(int i=0;i<6;i++){
-        for(int j=0;j<8;j++){
+    for(int i=0;i<x_grid;i++){
+        for(int j=0;j<y_grid;j++){
             if(!has_wall(i, j))
                 if (dark && !checkULDR(player, i, j)){
                     Ball(i, j, COLOR_BLACK).draw(VP);
@@ -132,8 +138,9 @@ void tick_input(GLFWwindow *window) {
     if (has_wall(new_x, new_y)){
         
             player.set_position(new_x, new_y);
-        
+            score += dark ? 2 : 1;
     }
+    health -= 0.01;
     lastTime = currentTime;
 }
 
@@ -172,32 +179,14 @@ void initGL(GLFWwindow *window, int width, int height) {
 
 int main(int argc, char **argv) {
     srand(time(0));
-    int width  = 600;
-    int height = 600;
+    int width  = 800;
+    int height = 800;
     camera_rotation_angle -= 90;
     window = initGLFW(width, height);
-    
-    walls.push_back(make_pair(0, 0));
-    walls.push_back(make_pair(0, 1));
-    walls.push_back(make_pair(1, 1));
-    walls.push_back(make_pair(2, 1));
-    walls.push_back(make_pair(2, 0));
-    walls.push_back(make_pair(3, 0));
-    walls.push_back(make_pair(4, 0));
-    walls.push_back(make_pair(4, 1));
-    walls.push_back(make_pair(4, 2));
-    walls.push_back(make_pair(4, 3));
-    walls.push_back(make_pair(3, 3));
-    walls.push_back(make_pair(2, 3));
-    walls.push_back(make_pair(2, 4));
-    walls.push_back(make_pair(2, 5));
-    walls.push_back(make_pair(3, 5));
-    walls.push_back(make_pair(4, 5));
-    walls.push_back(make_pair(5, 5));
-    walls.push_back(make_pair(3, 6));
-    walls.push_back(make_pair(3, 7));
-    walls.push_back(make_pair(4, 7));
-    walls.push_back(make_pair(5, 7));
+
+    pair<int, int> gridsize = create_walls(walls);
+    x_grid = gridsize.first;
+    y_grid = gridsize.second;
 
     initGL (window, width, height);
 
