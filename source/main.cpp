@@ -4,6 +4,7 @@
 #include "ball.h"
 #include "player.h"
 #include "maze.h"
+#include "switch.h"
 
 using namespace std;
 
@@ -16,14 +17,18 @@ GLFWwindow *window;
 **************************/
 
 Player player;
+Switch switch1, switch2;
 vector<pair<int, int>> walls;
 
 float screen_zoom = 0.2, screen_center_x = 0, screen_center_y = 0;
 float camera_rotation_angle = 0;
 int dark=0;
 int x_grid=0, y_grid=0;
+int final_x = 0, final_y=0;
+int switch1_x=0, switch1_y=0, switch2_x=0, switch2_y=0;
 int score=0;
 float health = 20;
+int open_exit1 = 0, open_exit2 = 0;
 Timer t60(1.0 / 60);
 
 void print_values(){
@@ -32,7 +37,12 @@ void print_values(){
     cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
     cout << "VERSION: " << glGetString(GL_VERSION) << endl;
     cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
-    cout << "Score: " << score << "\tHealth: " << health << endl;
+    cout << "Score: " << score;
+    if(dark) 
+        cout << "(x2)";
+    cout << "\tHealth: " << health << endl;
+    cout << "Switch 1: " << open_exit1 << "\tSwitch 2: " << open_exit2 << endl;
+    cout << "Press violet switch to open exit and reach exit to win" << endl;
 }
 
 bool has_wall(int x, int y){
@@ -65,6 +75,10 @@ bool checkULDR(Player player, int x, int y){
 
 bool check_player_objects(int x, int y){
     if(player.position.x == x && player.position.y == y)
+        return 0;
+    if(switch1_x == x && switch1_y == y)
+        return 0;
+    if(switch2_x == x && switch2_y == y)
         return 0;
     return 1;
 }
@@ -102,12 +116,18 @@ void draw() {
 
     // Scene render
     player.draw(VP);
+    switch1.draw(VP);
+    switch2.draw(VP);
     for(auto wall: walls){
         if(check_player_objects(wall.first, wall.second)){
             if(dark && !checkULDR(player, wall.first, wall.second)){
                 Ball(wall.first, wall.second, COLOR_BLACK).draw(VP);
             }else{
-                Ball(wall.first, wall.second, COLOR_GREEN).draw(VP);
+                if(open_exit1 && open_exit2 && wall.first == final_x && wall.second == final_y){
+                    Ball(wall.first, wall.second, COLOR_GGREEN).draw(VP);
+                }else{
+                    Ball(wall.first, wall.second, COLOR_GREEN).draw(VP);
+                }
             }
         }
     }
@@ -125,7 +145,7 @@ void draw() {
     
 }
 
-void tick_input(GLFWwindow *window) {
+int tick_input(GLFWwindow *window) {
     static double lastTime = glfwGetTime();
     double currentTime = glfwGetTime();
     float deltaTime = float(currentTime - lastTime);
@@ -153,11 +173,23 @@ void tick_input(GLFWwindow *window) {
         dark = !dark;
     }
     if (has_wall(new_x, new_y) && (player.position.x != new_x || player.position.y != new_y)){
+            if(new_x == switch1_x && new_y == switch1_y){
+                open_exit1 = !open_exit1;
+            }
+            if(new_x == switch2_x && new_y == switch2_y){
+                open_exit2 = !open_exit2;
+            }
+            if(open_exit1 && open_exit2 && new_x == final_x && new_y == final_y){
+                score += 100;
+                score += 10 * health;
+                return 0;
+            }
             player.set_position(new_x, new_y);
             score += dark ? 2 : 1;
     }
     health -= 0.01;
     lastTime = currentTime;
+    return 1;
 }
 
 void tick_elements() {
@@ -171,6 +203,8 @@ void initGL(GLFWwindow *window, int width, int height) {
     // Create the models
 
     player       = Player(0, 0, COLOR_BLUE);
+    switch1      = Switch(switch1_x, switch1_y, COLOR_VIOLET);
+    switch2      = Switch(switch2_x, switch2_y, COLOR_VIOLET);
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("../source/shaders/shader.vert", "../source/shaders/shader.frag");
     // Get a handle for our "MVP" uniform
@@ -199,6 +233,20 @@ int main(int argc, char **argv) {
     pair<int, int> gridsize = create_walls(walls);
     x_grid = gridsize.first;
     y_grid = gridsize.second;
+    final_x = walls[walls.size()-1].first;
+    final_y = walls[walls.size()-1].second;
+    int result = 0;
+    do{
+        result =(rand() % walls.size()-2) + 2;
+        switch1_x = walls[result].first;
+        switch1_y = walls[result].second;
+    }while( (switch1_x == final_x && switch1_y == final_y) || result == 0);
+    
+    do{
+        result =(rand() % walls.size()-2) + 2;
+        switch2_x = walls[result].first;
+        switch2_y = walls[result].second;
+    }while((switch2_x == final_x && switch2_y == final_y) || result == 0);
 
     initGL (window, width, height);
 
@@ -213,8 +261,11 @@ int main(int argc, char **argv) {
             glfwSwapBuffers(window);
 
             tick_elements();
-            tick_input(window);
+            int n = tick_input(window);
             print_values();
+            if(!n){
+                break;
+            }
         }
 
         // Poll for Keyboard and mouse events

@@ -79,8 +79,11 @@ void reset_screen();
 // ---- Colors ----
 extern const color_t COLOR_RED;
 extern const color_t COLOR_GREEN;
+extern const color_t COLOR_GGREEN;
 extern const color_t COLOR_BLACK;
 extern const color_t COLOR_BLUE;
+extern const color_t COLOR_VIOLET;
+extern const color_t COLOR_RRED;
 extern const color_t COLOR_BACKGROUND;
 
 #endif
