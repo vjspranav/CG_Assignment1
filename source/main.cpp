@@ -62,6 +62,13 @@ bool checkULDR(Player player, int x, int y){
     }
     return 0;
 }
+
+bool check_player_objects(int x, int y){
+    if(player.position.x == x && player.position.y == y)
+        return 0;
+    return 1;
+}
+
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 void draw() {
@@ -96,7 +103,7 @@ void draw() {
     // Scene render
     player.draw(VP);
     for(auto wall: walls){
-        if(wall.first!=player.position.x || wall.second != player.position.y){
+        if(check_player_objects(wall.first, wall.second)){
             if(dark && !checkULDR(player, wall.first, wall.second)){
                 Ball(wall.first, wall.second, COLOR_BLACK).draw(VP);
             }else{
