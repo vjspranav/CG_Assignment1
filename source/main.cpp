@@ -1,5 +1,6 @@
 #include "main.h"
 #include "timer.h"
+#include <unistd.h>
 #include "ball.h"
 #include "player.h"
 #include "maze.h"
@@ -24,6 +25,15 @@ int x_grid=0, y_grid=0;
 int score=0;
 float health = 20;
 Timer t60(1.0 / 60);
+
+void print_values(){
+    system("clear");
+    cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
+    cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
+    cout << "VERSION: " << glGetString(GL_VERSION) << endl;
+    cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
+    cout << "Score: " << score << "\tHealth: " << health << endl;
+}
 
 bool has_wall(int x, int y){
     for(auto wall : walls){ 
@@ -112,7 +122,7 @@ void tick_input(GLFWwindow *window) {
     static double lastTime = glfwGetTime();
     double currentTime = glfwGetTime();
     float deltaTime = float(currentTime - lastTime);
-
+    sleep(deltaTime);
     int w  = glfwGetKey(window, GLFW_KEY_W);
     int s  = glfwGetKey(window, GLFW_KEY_S);
     int a = glfwGetKey(window, GLFW_KEY_A);
@@ -135,8 +145,7 @@ void tick_input(GLFWwindow *window) {
     if (l) {
         dark = !dark;
     }
-    if (has_wall(new_x, new_y)){
-        
+    if (has_wall(new_x, new_y) && (player.position.x != new_x || player.position.y != new_y)){
             player.set_position(new_x, new_y);
             score += dark ? 2 : 1;
     }
@@ -170,10 +179,6 @@ void initGL(GLFWwindow *window, int width, int height) {
     glEnable (GL_DEPTH_TEST);
     glDepthFunc (GL_LEQUAL);
 
-    cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
-    cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
-    cout << "VERSION: " << glGetString(GL_VERSION) << endl;
-    cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 }
 
 
@@ -191,18 +196,18 @@ int main(int argc, char **argv) {
     initGL (window, width, height);
 
     /* Draw in loop */
-    while (!glfwWindowShouldClose(window)) {
+    while (!glfwWindowShouldClose(window) && health > 0) {
         // Process timers
-
         if (t60.processTick()) {
             // 60 fps
             // OpenGL Draw commands
-            draw();
+            draw(); 
             // Swap Frame Buffer in double buffering
             glfwSwapBuffers(window);
 
             tick_elements();
             tick_input(window);
+            print_values();
         }
 
         // Poll for Keyboard and mouse events
