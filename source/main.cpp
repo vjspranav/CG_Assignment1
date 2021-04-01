@@ -17,7 +17,7 @@ GLFWwindow *window;
 **************************/
 
 Player player;
-Switch switch1, switch2;
+Switch switch1, switch2, hswitch;
 vector<pair<int, int>> walls;
 
 float screen_zoom = 0.2, screen_center_x = 0, screen_center_y = 0;
@@ -25,9 +25,10 @@ float camera_rotation_angle = 0;
 int dark=0;
 int x_grid=0, y_grid=0;
 int final_x = 0, final_y=0;
-int switch1_x=0, switch1_y=0, switch2_x=0, switch2_y=0;
+int switch1_x=0, switch1_y=0, switch2_x=0, switch2_y=0, hswitch_x = 0, hswitch_y = 0;
 int score=0;
 float health = 20;
+int health_switch=1;
 int open_exit1 = 0, open_exit2 = 0;
 Timer t60(1.0 / 60);
 
@@ -41,8 +42,9 @@ void print_values(){
     if(dark) 
         cout << "(x2)";
     cout << "\tHealth: " << health << endl;
-    cout << "Switch 1: " << open_exit1 << "\tSwitch 2: " << open_exit2 << endl;
-    cout << "Press violet switch to open exit and reach exit to win" << endl;
+    cout << "Switch 1: " << (open_exit1 ? "Pressed" : "Not Pressed") << "\tSwitch 2: " << (open_exit2 ? "Pressed" : "Not Pressed") << endl;
+    cout << "Green Switch with white background increaes health by 10 ca only be used once" << endl;
+    cout << "Press both the violet switches to open exit and reach exit to win" << endl;
 }
 
 bool has_wall(int x, int y){
@@ -79,6 +81,8 @@ bool check_player_objects(int x, int y){
     if(switch1_x == x && switch1_y == y)
         return 0;
     if(switch2_x == x && switch2_y == y)
+        return 0;
+    if(hswitch_x == x && hswitch_y == y && health_switch)
         return 0;
     return 1;
 }
@@ -118,6 +122,8 @@ void draw() {
     player.draw(VP);
     switch1.draw(VP);
     switch2.draw(VP);
+    if(health_switch)
+        hswitch.draw(VP);
     for(auto wall: walls){
         if(check_player_objects(wall.first, wall.second)){
             if(dark && !checkULDR(player, wall.first, wall.second)){
@@ -179,6 +185,10 @@ int tick_input(GLFWwindow *window) {
             if(new_x == switch2_x && new_y == switch2_y){
                 open_exit2 = !open_exit2;
             }
+            if(new_x == hswitch_x && new_y == hswitch_y && health_switch){
+                health_switch=0;
+                health += 10;
+            }
             if(open_exit1 && open_exit2 && new_x == final_x && new_y == final_y){
                 score += 100;
                 score += 10 * health;
@@ -205,6 +215,7 @@ void initGL(GLFWwindow *window, int width, int height) {
     player       = Player(0, 0, COLOR_BLUE);
     switch1      = Switch(switch1_x, switch1_y, COLOR_VIOLET);
     switch2      = Switch(switch2_x, switch2_y, COLOR_VIOLET);
+    hswitch      = Switch(hswitch_x, hswitch_y, COLOR_GGREEN);
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders("../source/shaders/shader.vert", "../source/shaders/shader.frag");
     // Get a handle for our "MVP" uniform
@@ -247,6 +258,12 @@ int main(int argc, char **argv) {
         switch2_x = walls[result].first;
         switch2_y = walls[result].second;
     }while((switch2_x == final_x && switch2_y == final_y) || result == 0);
+
+    do{
+        result =(rand() % walls.size()-2) + 2;
+        hswitch_x = walls[result].first;
+        hswitch_y = walls[result].second;
+    }while((hswitch_x == final_x && hswitch_y == final_y) || result == 0);
 
     initGL (window, width, height);
 
